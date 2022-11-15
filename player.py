@@ -65,20 +65,48 @@ class PlayerControllerMinimax(PlayerController):
         # NOTE: Don't forget to initialize the children of the current node
         #       with its compute_and_get_children() method!
 
-        children = []
-        children = initial_tree_node.compute_and_get_children()
-        print(children[0].state.get_fish_scores())
+        print("fishes: ", initial_tree_node.state.get_fish_positions())
+        print("hook:", initial_tree_node.state.get_hook_positions()[0])
+        print("min_dis: ", self.create_hueristic(initial_tree_node))
+
         random_move = random.randrange(5)
         return ACTION_TO_STR[random_move]
 
-
     def get_hueristic(node, depth):
 
+        node.compute_and_get_children
+        if (depth != 1):
+            depth = depth - 1
 
-        i = 0
-        for j in node.children:
-            node[j].compute_and_get_children
-            if(i != depth):
-                i += 1
-                node.get_hueristic(node[i],depth)
-            node
+            for c in node.children:
+                c.setValue(node.get_hueristic(c, depth))
+
+        else:
+            # create hueristic
+            return 1  # min/max
+
+    def get_min_distance(self,node):
+        p1 = node.state.get_hook_positions()[0]
+        fishes = node.state.get_fish_positions()
+        p0_x = p1[0]
+        p0_y = p1[1]
+        min_dis = 999
+        closest_fish = 0
+
+        for i in range(len(fishes)):
+            x = abs(fishes[i][0] - p0_x)
+            y = abs(fishes[i][1] - p0_y)
+            if((x+y < min_dis)):
+                min_dis = x+y
+                closest_fish = i
+
+        return min_dis,closest_fish
+
+
+    def create_hueristic(self,node):
+
+        min_dis,closest_fish = self.get_min_distance(node)
+
+        print("the fish: ", closest_fish)
+        return min_dis
+
