@@ -70,7 +70,7 @@ class PlayerControllerMinimax(PlayerController):
         print("min_dis: ", self.create_hueristic(initial_tree_node))
 
         random_move = random.randrange(5)
-        return ACTION_TO_STR[random_move]
+        return 1
 
     def get_hueristic(node, depth):
 
