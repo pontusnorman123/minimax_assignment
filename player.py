@@ -68,9 +68,10 @@ class PlayerControllerMinimax(PlayerController):
         print("fishes: ", initial_tree_node.state.get_fish_positions())
         print("hook:", initial_tree_node.state.get_hook_positions()[0])
         print("min_dis: ", self.create_hueristic(initial_tree_node))
-
         random_move = random.randrange(5)
-        return 1
+        # print(ACTION_TO_STR[random_move])
+
+        return self.create_hueristic(initial_tree_node)
 
     def get_hueristic(node, depth):
 
@@ -79,34 +80,67 @@ class PlayerControllerMinimax(PlayerController):
             depth = depth - 1
 
             for c in node.children:
-                c.setValue(node.get_hueristic(c, depth))
+                val, move = node.get_hueristic(c, depth)
+                c.setValue(val)
+                c.move = move
 
         else:
             # create hueristic
             return 1  # min/max
 
-    def get_min_distance(self,node):
-        p1 = node.state.get_hook_positions()[0]
+    """
+    Rules:
+    1. Go for the best fish first
+    2. Position hook on same level as fish before moving boat
+    3. Move boat closer to fish
+
+    """
+
+    def highestFishScore(self, node):
         fishes = node.state.get_fish_positions()
-        p0_x = p1[0]
-        p0_y = p1[1]
-        min_dis = 999
-        closest_fish = 0
+        highScore = 0
+        bestFishes = []
+        for fish in fishes:
+            tempScore = node.state.get_fish_scores()[fish]
+            if tempScore > highScore:
+                highScore = tempScore
+                bestFishes.append(fish)
+        return bestFishes
 
-        for i in range(len(fishes)):
-            x = abs(fishes[i][0] - p0_x)
-            y = abs(fishes[i][1] - p0_y)
-            if((x+y < min_dis)):
-                min_dis = x+y
-                closest_fish = i
+    def getDistance(self, playerPos, fishPos, movePos):
+        x = abs(playerPos[0]-fishPos[0] + movePos[0])
+        y = abs(playerPos[1]-fishPos[1] + movePos[1])
+        return x + y
 
-        return min_dis,closest_fish
+    def bestMove(self, node, bestFishes):
+        upDown = {"left": (-1, 0), "right": (1, 0)}
+        leftRight = {"up": (0, 1), "down": (0, -1), "stay": (0, 0)}
+        moves = {"left": (-1, 0), "right": (1, 0),
+                 "up": (0, 1), "down": (0, -1), "stay": (0, 0)}
+        hookPos = node.state.get_hook_positions()[0]
+        fishesPos = node.state.get_fish_positions()
+        minDistance = 666
+        bestMove = "stay"
+        for fish in bestFishes:
+            for move in moves:
+                tempDistance = self.getDistance(
+                    hookPos, fishesPos[fish], moves[move])
+                print("HookPos:", hookPos, "   ", "FishPos:", fishesPos[fish])
+                print("distance:", tempDistance, "   ", "move", move)
+                if tempDistance < minDistance:
+                    minDistance = tempDistance
+                    targetFish = fish
+                    bestMove = move
+        return bestMove
 
+    def create_hueristic(self, node):
+        moves = {"left": (-1, 0), "right": (1, 0),
+                 "up": (0, 1), "down": (0, -1), "stay": (0, 0)}
 
-    def create_hueristic(self,node):
+        min_dis = 666
+        bestMove = "stay"
 
-        min_dis,closest_fish = self.get_min_distance(node)
-
-        print("the fish: ", closest_fish)
-        return min_dis
-
+        bestFishes = self.highestFishScore(node)
+        print("TargetedFish:", bestFishes)
+        theMove = self.bestMove(node, bestFishes)
+        return theMove
