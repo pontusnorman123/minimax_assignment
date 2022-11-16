@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from math import inf
 import random
 
 from fishing_game_core.game_tree import Node
@@ -65,31 +66,55 @@ class PlayerControllerMinimax(PlayerController):
         # NOTE: Don't forget to initialize the children of the current node
         #       with its compute_and_get_children() method!
 
-        print("fishes: ", initial_tree_node.state.get_fish_positions())
-        print("hook:", initial_tree_node.state.get_hook_positions()[0])
-        print("min_dis: ", self.create_hueristic(initial_tree_node))
+        #print("fishes: ", initial_tree_node.state.get_fish_positions())
+        #print("hook:", initial_tree_node.state.get_hook_positions()[0])
+        #print("min_dis: ", self.create_hueristic(initial_tree_node))
         random_move = random.randrange(5)
         # print(ACTION_TO_STR[random_move])
+        startPlayer = 0
+        print(self.get_hueristic(initial_tree_node, 4, 0))
 
-        return self.create_hueristic(initial_tree_node)
+        return self.optimalMove(initial_tree_node)
 
-    def get_hueristic(node, depth):
+    def createHeuristic(self, node):
+        # Return poängställning
+        """
+        Input: hookPos, fishesPos, player.scores()
+        Function: Beräkna poängställning efter move
+        Output: Poängställning
+        """
+        p = node.state.get_player_scores()[0]
+        c = node.state.get_player_scores()[1]
+        return p-c
 
-        node.compute_and_get_children
-        if (depth != 1):
-            depth = depth - 1
+    def get_hueristic(self, node, depth, player):
 
-            for c in node.children:
-                val, move = node.get_hueristic(c, depth)
-                c.setValue(val)
-                c.move = move
+        node.compute_and_get_children()
+        if (depth == 1):
+            return self.createHeuristic(node)
 
+        depth = depth - 1
+
+        if (player == 0):
+            player = 1
+            bestPossible = -inf
+            for child in node.children:
+                points = self.get_hueristic(child, depth, player)
+                bestPossible = max(bestPossible, points)
+            return bestPossible
         else:
-            # create hueristic
-            return 1  # min/max
+            bestPossible = inf
+            player = 0
+            for child in node.children:
+                points = self.get_hueristic(child, depth, player)
+                bestPossible = min(bestPossible, points)
+            return bestPossible
 
     """
     Rules:
+    1. a/b pruning - "poäng skillnaden mellan p och c + poäng/fisk"
+    2. getMinDistance
+
     1. Go for the best fish first
     2. Position hook on same level as fish before moving boat
     3. Move boat closer to fish
@@ -113,8 +138,6 @@ class PlayerControllerMinimax(PlayerController):
         return x + y
 
     def bestMove(self, node, bestFishes):
-        upDown = {"left": (-1, 0), "right": (1, 0)}
-        leftRight = {"up": (0, 1), "down": (0, -1), "stay": (0, 0)}
         moves = {"left": (-1, 0), "right": (1, 0),
                  "up": (0, 1), "down": (0, -1), "stay": (0, 0)}
         hookPos = node.state.get_hook_positions()[0]
@@ -125,22 +148,27 @@ class PlayerControllerMinimax(PlayerController):
             for move in moves:
                 tempDistance = self.getDistance(
                     hookPos, fishesPos[fish], moves[move])
-                print("HookPos:", hookPos, "   ", "FishPos:", fishesPos[fish])
-                print("distance:", tempDistance, "   ", "move", move)
+                #print("HookPos:", hookPos, "   ", "FishPos:", fishesPos[fish])
+                #print("distance:", tempDistance, "   ", "move", move)
                 if tempDistance < minDistance:
                     minDistance = tempDistance
                     targetFish = fish
                     bestMove = move
         return bestMove
 
-    def create_hueristic(self, node):
+    def optimalMove(self, node):
+        # GetHeuristic (skapar träd, kollar alla noder, hittar best outcome)
+
+        # Om det skiter sig (kan inte se tillräckligt långt fram)
+        # getMinDistance --> bestMove
+
+        # Return poängställningen i varje state
         moves = {"left": (-1, 0), "right": (1, 0),
                  "up": (0, 1), "down": (0, -1), "stay": (0, 0)}
 
         min_dis = 666
         bestMove = "stay"
-
         bestFishes = self.highestFishScore(node)
-        print("TargetedFish:", bestFishes)
+        #print("TargetedFish:", bestFishes)
         theMove = self.bestMove(node, bestFishes)
         return theMove
