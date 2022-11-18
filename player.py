@@ -76,16 +76,40 @@ class PlayerControllerMinimax(PlayerController):
         # print(initial_tree_node.get_move())
 
         return self.optimalMove(initial_tree_node, 4)
+        # return "left"
+
+    def computerBlocks(self, node, fishPos):
+        hooks = node.state.get_hook_positions()
+        computerPos = hooks[1][0]
+        playerPos = hooks[0][0]
+
+        #print("FishPos:", fishPos, "  playerPos:", playerPos,"  compPos:", computerPos, "  block?", end=" ")
+        #print(min(fishPos, playerPos) <= computerPos <=max(fishPos, playerPos), end=" ")
+
+        if (min(fishPos, playerPos) <= computerPos <= max(fishPos, playerPos)):
+            return True
+
+        return False
 
     def closestFish(self, node, player):
         fishes = node.state.get_fish_positions()
         hookpos = node.state.get_hook_positions()[player]
         minDistance = 666
+
+        """
+        
+            
+        """
+
         for fish in fishes:
             x = abs(hookpos[0]-fishes[fish][0])
+            if (self.computerBlocks(node, fishes[fish][0])):
+                x = 20-x
             y = abs(hookpos[1]-fishes[fish][1])
             if ((x+y) < minDistance):
                 minDistance = x+y
+            # print(x)
+            #print("hookpos:", hookpos, "   fishpos:",fishes[fish], "   x:", x, "   compPos:", node.state.get_hook_positions()[1])
         return (1/(minDistance+1))
 
     def evaluation(self, node):
@@ -96,10 +120,13 @@ class PlayerControllerMinimax(PlayerController):
         Output: Poängställning
         """
 
-        p = node.state.get_player_scores()[0]
+        p = abs(node.state.get_player_scores()[0])
         c = node.state.get_player_scores()[1]
         heuristic = p-c
         player = node.state.player
+
+        #print("Heuristic", heuristic, "  p:", p, "  c:", c,"   fish:", self.closestFish(node, player))
+
         #print(node.move, "  ", node.state.player_caught)
         # min
         if (player):
@@ -218,7 +245,8 @@ class PlayerControllerMinimax(PlayerController):
         smartMove = self.minmaxMove(node, depth)
         print("Distance:", distance)
         print("Closer", moveCloser, "   Smart", smartMove)
-        if (distance > depth/2):
-            return moveCloser
+        #print("HooksPos:", node.state.get_hook_positions()[0])
+        # if (distance > depth/2):
+        # return moveCloser
 
         return smartMove
