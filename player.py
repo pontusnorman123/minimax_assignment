@@ -5,6 +5,8 @@ from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
 
+hash_table_states = {}
+
 
 class PlayerControllerHuman(PlayerController):
     def player_loop(self):
@@ -72,6 +74,8 @@ class PlayerControllerMinimax(PlayerController):
         highScore = -99999
         best_move = 0
 
+        #print(hash_table_states)
+
         for node in nodes:
             player = node.state.get_player()
             score = self.minimax(node, 2, alpha, beta, player)
@@ -83,6 +87,10 @@ class PlayerControllerMinimax(PlayerController):
     def minimax(self, node, depth, a, b, player):
         if depth == 0 or node.compute_and_get_children() == []:
             return self.evaluation(node)
+
+        ##Kollar om state finns i hash tabell
+        if(hash(node.state) in hash_table_states.keys()):
+            return hash_table_states.get(hash(node.state))
 
         nodes = node.compute_and_get_children()
         if player == 0:
@@ -117,6 +125,7 @@ class PlayerControllerMinimax(PlayerController):
         c = node.state.get_player_scores()[1]       # Computer points
         heuristic = p-c
         # Difference in points
+        self.add_state_to_hash_table(hash(node.state),heuristic + self.decideFish(node)) ## add state with value to hash table
         return heuristic + self.decideFish(node)
 
     def decideFish(self, node):
@@ -129,6 +138,11 @@ class PlayerControllerMinimax(PlayerController):
                 x = abs(20-x)
             y = abs(hookPos[1] - fishes[f][1])
             d = x + y
-            point = abs(node.state.get_fish_scores()[f])
+            point = abs(node.state.get_fish_scores()[f]) ##Ska det vara abs om vissa fiskar har negativ poäng
             ratio = max(ratio, point/((d*d)+1))
         return ratio
+
+
+    def add_state_to_hash_table(self,state,value):
+
+        hash_table_states.update({state : value})
